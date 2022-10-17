@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Localization Indonesia - Create From Order
+Bundle-SymbolicName: org.abe.idempiere.LID.createfromorder;singleton:=true
+Bundle-Version: 9.0.0.qualifier
+Bundle-Activator: org.adempiere.plugin.utils.Incremental2PackActivator
+Bundle-Vendor: ABE
+Require-Bundle: org.adempiere.base;bundle-version="9.0.0",
+ org.adempiere.plugin.utils;bundle-version="9.0.0",
+ org.adempiere.ui.zk;bundle-version="9.0.0",
+ org.adempiere.ui;bundle-version="9.0.0",
+ zul;bundle-version="9.6.0",
+ zk;bundle-version="9.6.0"
+Export-Package: org.idempiere.abe.webui.apps.form,
+ org.idempiere.abe.webui.factory
+Service-Component: OSGI-INF/CreateFromFactory.xml
+Import-Package: org.osgi.service.event
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Automatic-Module-Name: org.abe.idempiere.LID.createfromorder
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version>=11))"

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.abe.idempiere.LID.feature"
+      label="LID-feature"
+      version="9.0.0.qualifier"
+      provider-name="ABE">
+
+   <description>
+      Feature Localization Indonesia
+   </description>
+
+   <copyright>
+      Copyright: ABE &amp; Solutions
+   </copyright>
+
+   <license url="">
+      GPLv2
+   </license>
+
+   <plugin
+         id="org.abe.idempiere.LID.createfromorder"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

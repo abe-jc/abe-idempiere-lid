@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+    <feature url="features/org.abe.idempiere.LID-feature_9.0.0.qualifier.jar" id="org.abe.idempiere.LID.feature" version="9.0.0.qualifier">
+	    <category name="org.abe.idempiere.LID"/>
+    </feature>
+</site>
