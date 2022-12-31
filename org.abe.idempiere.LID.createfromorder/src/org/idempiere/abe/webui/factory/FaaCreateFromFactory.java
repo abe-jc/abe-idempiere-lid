@@ -31,6 +31,8 @@ public class FaaCreateFromFactory implements ICreateFromFactory {
 		else 
 			moveType = Env.getContext(Env.getCtx(), mTab.getWindowNo(), "MovementType");
 		
+		
+		
 		if (tableName.equals(I_C_Order.Table_Name))
 			return new WCreateFromOrderUI(mTab);
 		
