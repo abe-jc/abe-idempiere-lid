@@ -300,7 +300,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 				InputEvent inputEvent = (InputEvent) e;
 				String value = inputEvent.getValue();
 				
-				orderField.setAttribute("last.onchaning", value);
+				orderField.setAttribute("last.onchanging", value);
 				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
 				initBPOrderDetails(bpId,false,value);
 				
