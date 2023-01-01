@@ -265,7 +265,7 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 				InputEvent inputEvent = (InputEvent) e;
 				String value = inputEvent.getValue();
 				
-				orderField.setAttribute("last.onchaning", value);
+				orderField.setAttribute("last.onchanging", value);
 				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
 				initBPOrderDetails(bpId,false,value);
 				
@@ -304,9 +304,8 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 				InputEvent inputEvent = (InputEvent) e;
 				String value = inputEvent.getValue();
 				
-				shipmentField.setAttribute("last.onchaning", value);
+				shipmentField.setAttribute("last.onchanging", value);
 				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
-//				initBPShipmentDetails(bpId,false,value);
 				initBPShipmentDetails(bpId, value);
 				
 			}else if(Events.ON_CHANGE.equals(e.getName())) {
