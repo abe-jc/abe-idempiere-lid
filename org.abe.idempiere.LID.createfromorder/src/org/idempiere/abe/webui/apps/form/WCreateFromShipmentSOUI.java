@@ -475,6 +475,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		orderField.addItem(pp);
 		
 		ArrayList<KeyNamePair> list = loadOrderData(C_BPartner_ID, forInvoice, sameWarehouseCb.isSelected());
+		
 		if(filter == null || filter.isBlank()) {
 			for(KeyNamePair knp : list)
 				orderField.addItem(knp);
