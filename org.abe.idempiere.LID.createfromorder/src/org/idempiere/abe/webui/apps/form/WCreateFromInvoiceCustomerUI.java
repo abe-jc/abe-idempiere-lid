@@ -266,8 +266,8 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 				String value = inputEvent.getValue();
 				
 				orderField.setAttribute("last.onchanging", value);
-				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
-				initBPOrderDetails(bpId,false,value);
+				int C_BPartner_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_BPartner_ID");
+				initBPOrderDetails(C_BPartner_ID,false,value);
 				
 			}else if(Events.ON_CHANGE.equals(e.getName())) {
 				orderField.removeAttribute("last.onchanging");
@@ -305,8 +305,8 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 				String value = inputEvent.getValue();
 				
 				shipmentField.setAttribute("last.onchanging", value);
-				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
-				initBPShipmentDetails(bpId, value);
+				int C_BPartner_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_BPartner_ID");
+				initBPShipmentDetails(C_BPartner_ID, value);
 				
 			}else if(Events.ON_CHANGE.equals(e.getName())) {
 				shipmentField.removeAttribute("last.onchanging");
@@ -391,8 +391,6 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 			}
 		}
 		
-//		for(KeyNamePair knp : list)
-//			orderField.addItem(knp);
 		
 		orderField.clearSelection();
 		orderField.addActionListener(this);
