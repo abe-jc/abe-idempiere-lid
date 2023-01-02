@@ -277,7 +277,8 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		if (e.getTarget().equals(orderField.getListbox()))
 		{
 			KeyNamePair pp = orderField.getSelectedItem().toKeyNamePair();
-			if (pp != null && pp.getKey() > 0)
+//			if (pp != null && pp.getKey() > 0)
+			if (pp != null)
 			{
 				int C_Order_ID = pp.getKey();
 				//  set Invoice and Shipment to Null
@@ -288,10 +289,10 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
                 rmaField.setSelectedIndex(-1);
 				loadOrder(C_Order_ID, false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 				
-				if(C_Order_ID == 0) {
-					int bpId = bPartnerField.getValue() == null?0:((Integer)locatorField.getValue()).intValue();
-					initBPOrderDetails(bpId, false);
-				}
+				if (C_Order_ID == 0) {
+                	int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
+                	initBPOrderDetails(bpId, false);
+                }
 			}
 		}
 		//bandboxSearch
@@ -485,8 +486,6 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 					orderField.addItem(knp);
 			}
 		}
-//		for(KeyNamePair knp : list)
-//			orderField.addItem(knp);
 		
 		int C_Order_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_Order_ID");
 		if (C_Order_ID > 0) {
@@ -497,7 +496,6 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 					loadOrder(knpo.getKey(), false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 			}
 		} else {
-//			orderField.getLisetSelectedIndex(0);
 			orderField.getListbox().setSelectedIndex(0);
 		}
 		orderField.addActionListener(this);
