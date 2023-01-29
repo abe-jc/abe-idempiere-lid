@@ -1,16 +1,3 @@
-/******************************************************************************
- * Copyright (C) 2009 Low Heng Sin                                            *
- * Copyright (C) 2009 Idalica Corporation                                     *
- * This program is free software; you can redistribute it and/or modify it    *
- * under the terms version 2 of the GNU General Public License as published   *
- * by the Free Software Foundation. This program is distributed in the hope   *
- * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied *
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.           *
- * See the GNU General Public License for more details.                       *
- * You should have received a copy of the GNU General Public License along    *
- * with this program; if not, write to the Free Software Foundation, Inc.,    *
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.                     *
- *****************************************************************************/
 package org.idempiere.abe.webui.apps.form;
 
 import static org.compiere.model.SystemIDs.WINDOW_CUSTOMERRETURN;
@@ -22,6 +9,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Level;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.webui.ClientInfo;
 import org.adempiere.webui.LayoutUtils;
 import org.adempiere.webui.apps.AEnv;
@@ -38,6 +26,7 @@ import org.adempiere.webui.component.ListboxFactory;
 import org.adempiere.webui.component.Panel;
 import org.adempiere.webui.component.Row;
 import org.adempiere.webui.component.Rows;
+import org.adempiere.webui.component.Textbox;
 import org.adempiere.webui.editor.WEditor;
 import org.adempiere.webui.editor.WLocatorEditor;
 import org.adempiere.webui.editor.WSearchEditor;
@@ -50,7 +39,6 @@ import org.compiere.model.MLocatorLookup;
 import org.compiere.model.MLookup;
 import org.compiere.model.MLookupFactory;
 import org.compiere.model.MProduct;
-
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -61,21 +49,18 @@ import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zk.ui.event.InputEvent;
+//import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Space;
 import org.zkoss.zul.Vlayout;
 
-/**
- * 
- * @author Fabian Aguilar faaguilar@gmail.com
- * @author Abraham Sulaeman abraham.sulaeman@gmail.com
- * - compatibility with Idempiere Release-9
- *
- */
-public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements EventListener<Event>, ValueChangeListener
+public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt implements EventListener<Event>, ValueChangeListener  
 {
+
 	private WCreateFromWindow window;
+
+	private Vector<?> oldData;
 	
-	public WCreateFromShipmentSOUI(GridTab tab) 
+	public WCreateFromMaterialReceiptUI(GridTab tab) 
 	{
 		super(tab);
 		log.info(getGridTab().toString());
@@ -95,23 +80,25 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		{
 			log.log(Level.SEVERE, "", e);
 			setInitOK(false);
+			throw new AdempiereException(e.getMessage());
 		}
 		AEnv.showWindow(window);
 	}
+	
+
 	
 	/** Window No               */
 	private int p_WindowNo;
 
 	/**	Logger			*/
-	private final static CLogger log = CLogger.getCLogger(WCreateFromShipmentSOUI.class);
+	private final static CLogger log = CLogger.getCLogger(WCreateFromMaterialReceiptUI.class);
 		
 	protected Label bPartnerLabel = new Label();
 	protected WEditor bPartnerField;
 	
 	protected Label orderLabel = new Label();
-/**	protected Listbox orderField = ListboxFactory.newDropdownListbox(); */
 	protected BandboxSearch orderField = new BandboxSearch();
-	
+
     /** Label for the rma selection */
     protected Label rmaLabel = new Label();
     /** Combo box for selecting RMA document */
@@ -124,6 +111,11 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	protected WLocatorEditor locatorField = new WLocatorEditor();
 	protected Label upcLabel = new Label();
 	protected WStringEditor upcField = new WStringEditor();
+	
+	//Search text
+	protected Label searchLabel = new Label();
+//	protected WStringEditor searchField = new WStringEditor();
+	protected Textbox searchField = new Textbox();
 
 	private Grid parameterStdLayout;
 
@@ -134,20 +126,18 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	 *  @throws Exception if Lookups cannot be initialized
 	 *  @return true if initialized
 	 */
-	
-	private boolean isSOTrx;
 	public boolean dynInit() throws Exception
 	{
 		log.config("");
 		
 		super.dynInit();
-		isSOTrx = Env.getContext(Env.getCtx(), p_WindowNo, "IsSOTrx").equals("Y");
-		window.setTitle(Msg.getElement(Env.getCtx(), "M_InOut_ID", isSOTrx) + " .. " + Msg.translate(Env.getCtx(), "CreateFrom"));
+		
+		window.setTitle(getTitle());
 
 		sameWarehouseCb.setSelected(true);
 		sameWarehouseCb.addActionListener(this);
 		//  load Locator
-		MLocatorLookup locator = new MLocatorLookup(Env.getCtx(), p_WindowNo);
+		MLocatorLookup locator = new MLocatorLookup(Env.getCtx(), p_WindowNo, (String)null);
 		locatorField = new WLocatorEditor ("M_Locator_ID", true, false, true, locator, p_WindowNo);
 
 		initBPartner(false);
@@ -156,6 +146,10 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 
 		upcField = new WStringEditor ("UPC", false, false, true, 10, 30, null, null);
 		upcField.getComponent().addEventListener(Events.ON_CHANGE, this);
+		
+		searchField = new Textbox();
+		searchField.addEventListener(Events.ON_CHANGING, this);
+		
 
 		return true;
 	}   //  dynInit
@@ -163,16 +157,18 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	protected void zkInit() throws Exception
 	{
     	boolean isRMAWindow = ((getGridTab().getAD_Window_ID() == WINDOW_RETURNTOVENDOR) || (getGridTab().getAD_Window_ID() == WINDOW_CUSTOMERRETURN)); 
-    	//boolean isSOtrx = ((getGridTab().getAD_Window_ID() == WINDOW_ORDER) || (getGridTab().getAD_Window_ID() == WINDOW_CUSTOMERRETURN)); 
-    	
+
     	bPartnerLabel.setText(Msg.getElement(Env.getCtx(), "C_BPartner_ID"));
-		orderLabel.setText(Msg.getElement(Env.getCtx(), "C_Order_ID", isSOTrx));
-		invoiceLabel.setText(Msg.getElement(Env.getCtx(), "C_Invoice_ID", isSOTrx));
+		orderLabel.setText(Msg.getElement(Env.getCtx(), "C_Order_ID", false));
+		invoiceLabel.setText(Msg.getElement(Env.getCtx(), "C_Invoice_ID", false));
         rmaLabel.setText(Msg.translate(Env.getCtx(), "M_RMA_ID"));
 		locatorLabel.setText(Msg.translate(Env.getCtx(), "M_Locator_ID"));
         sameWarehouseCb.setText(Msg.getMsg(Env.getCtx(), "FromSameWarehouseOnly", true));
         sameWarehouseCb.setTooltiptext(Msg.getMsg(Env.getCtx(), "FromSameWarehouseOnly", false));
         upcLabel.setText(Msg.getElement(Env.getCtx(), "UPC", false));
+        
+        //search 
+        searchLabel.setText("Search");
 
 		Vlayout vlayout = new Vlayout();
 		ZKUpdateUtil.setVflex(vlayout, "min");
@@ -185,59 +181,43 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
     	ZKUpdateUtil.setVflex(vlayout, "parameterStdLayout");
     	
     	setupColumns(parameterStdLayout);
-    	Rows rows;
-    	Row row;
-    	if (!isSOTrx) { 
-    		rows = (Rows) parameterStdLayout.newRows();
-    		row = rows.newRow();
-    		row.appendChild(bPartnerLabel.rightAlign());
-    		if (bPartnerField != null) {
-    			row.appendChild(bPartnerField.getComponent());
-    			bPartnerField.fillHorizontal();
-    		}
-        	if (! isRMAWindow) {
-        		row.appendChild(orderLabel.rightAlign());
-        		row.appendChild(orderField);
-        		ZKUpdateUtil.setHflex(orderField, "1");
-        	}
-    		
-    		row = rows.newRow();
-    		row.appendChild(locatorLabel.rightAlign());
-    		row.appendChild(locatorField.getComponent());
-        	if (! isRMAWindow) {
-        		row.appendChild(invoiceLabel.rightAlign());
-        		row.appendChild(invoiceField);
-        		ZKUpdateUtil.setHflex(invoiceField, "1");
-        	}
-            
-    		row = rows.newRow();
-    		row.appendChild(new Space());
-    		row.appendChild(sameWarehouseCb);
-    		
-    		row = rows.newRow();
-    		row.appendChild(upcLabel.rightAlign());
-    		row.appendChild(upcField.getComponent());
-    		ZKUpdateUtil.setHflex(upcField.getComponent(), "1");
-    	}
-    	else {
-    		rows = (Rows) parameterStdLayout.newRows();
-    		row = rows.newRow();
-    		row.appendChild(locatorLabel.rightAlign());
-    		row.appendChild(locatorField.getComponent());
+		
+		Rows rows = (Rows) parameterStdLayout.newRows();
+		Row row = rows.newRow();
+		row.appendChild(bPartnerLabel.rightAlign());
+		if (bPartnerField != null) {
+			row.appendChild(bPartnerField.getComponent());
+			bPartnerField.fillHorizontal();
+		}
+    	if (! isRMAWindow) {
     		row.appendChild(orderLabel.rightAlign());
     		row.appendChild(orderField);
     		ZKUpdateUtil.setHflex(orderField, "1");
-		
-    		row = rows.newRow();
-    		row.appendChild(new Space());
-    		row.appendChild(sameWarehouseCb);
-    		
-    		row.appendChild(upcLabel.rightAlign());
-    		row.appendChild(upcField.getComponent());
-    		ZKUpdateUtil.setHflex(upcField.getComponent(), "1");
-
     	}
-    		
+		
+		row = rows.newRow();
+		row.appendChild(locatorLabel.rightAlign());
+		row.appendChild(locatorField.getComponent());
+    	if (! isRMAWindow) {
+    		row.appendChild(invoiceLabel.rightAlign());
+    		row.appendChild(invoiceField);
+    		ZKUpdateUtil.setHflex(invoiceField, "1");
+    	}
+        
+		row = rows.newRow();
+		row.appendChild(new Space());
+		row.appendChild(sameWarehouseCb);
+		
+		row = rows.newRow();
+		row.appendChild(upcLabel.rightAlign());
+		row.appendChild(upcField.getComponent());
+		ZKUpdateUtil.setHflex(upcField.getComponent(), "1");
+		
+		//search 
+		row.appendCellChild(searchLabel.rightAlign());
+		row.appendChild(searchField);
+		ZKUpdateUtil.setHflex(searchField, "1");
+		
     	if (isRMAWindow) {
             // Add RMA document selection to panel
             row.appendChild(rmaLabel.rightAlign());
@@ -252,7 +232,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		}
 	}
 
-	private boolean 	m_actionActive = false;
+	private boolean m_actionActive = false;
 	
 	/**
 	 *  Action Listener
@@ -272,35 +252,33 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 			if (pp != null && pp.getKey() > 0)
 			{
 				int C_Order_ID = pp.getKey();
-				//  set Invoice and Shipment to Null
 				orderField.setRawValue(pp.getName());
 				orderField.close();
-				
+				//  set Invoice and Shipment to Null
 				invoiceField.setSelectedIndex(-1);
                 rmaField.setSelectedIndex(-1);
+                searchField.setRawValue(null);
+
 				loadOrder(C_Order_ID, false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
-				
-				if(C_Order_ID == 0) {
-					int bpId = bPartnerField.getValue() == null?0:((Integer)locatorField.getValue()).intValue();
-					initBPOrderDetails(bpId, false);
-				}
 			}
 		}
-		//bandboxSearch
+		//for bandboxSearch order
 		else if(e.getTarget().equals(orderField)) {
 			if(Events.ON_CHANGING.equals(e.getName())) {
+
 				InputEvent inputEvent = (InputEvent) e;
 				String value = inputEvent.getValue();
 				
 				orderField.setAttribute("last.onchanging", value);
-				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
-				initBPOrderDetails(bpId,false,value);
+				int bpId = bPartnerField.getValue() == null ? 0 :((Integer)bPartnerField.getValue()).intValue();
+				initBPOrderDetails(bpId,false, value);
 				
-			}else if(Events.ON_CHANGE.equals(e.getName())) {
+				
+			}else {
 				orderField.removeAttribute("last.onchanging");
 			}
+			
 		}
-		
 		//  Invoice
 		else if (e.getTarget().equals(invoiceField))
 		{
@@ -311,6 +289,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 				//  set Order and Shipment to Null
 				orderField.clearSelection();
                 rmaField.setSelectedIndex(-1);
+                searchField.setRawValue(null);
 				loadInvoice(C_Invoice_ID, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 			}
 		}
@@ -324,6 +303,8 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
                 //  set Order and Shipment to Null
                 orderField.clearSelection();
                 invoiceField.setSelectedIndex(-1);
+                searchField.setRawValue(null);
+                
                 loadRMA(M_RMA_ID, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
             }
         }
@@ -338,8 +319,112 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 			checkProductUsingUPC();
 		}
 		
+		//searchfield
+		else if(e.getTarget().equals(searchField))
+		{
+//			ListModelTable oldData = (ListModelTable) window.getWListbox().getModel();
+			
+			
+			if(Events.ON_CHANGING.equals(e.getName())) {
+				InputEvent inputEvent = (InputEvent) e;
+				String valueSearch = inputEvent.getValue();
+				
+				findProductSearch(valueSearch);
+				searchField.setAttribute("last.onchanging", valueSearch);
+//				Messagebox.show("Dalam blok if On_Changing dengan value: "+valueSearch);
+			}else {
+//				Messagebox.show("Dalam blok else  On_Changing");
+				searchField.removeAttribute("last.onchanging");
+			}
+			
+
+		}
+		
 		m_actionActive = false;
 	}
+	
+	private void findProductSearch(String filter) {
+		
+		
+		
+		if(filter == null || filter.isBlank()) {
+			loadTableOIS(oldData);
+//			Messagebox.show("Dalam blok method findProductSearch, dengan value filter TIDAK ADA. dengan isi oldData: "+oldData);
+			
+		}else {
+			loadTableOIS(oldData);
+			
+			ListModelTable model = (ListModelTable) window.getWListbox().getModel();
+			List<Integer> selected = findProductRowSearch(filter);
+			
+			Vector<Object> newData = new Vector<Object>();
+			for (int row: selected)
+			{
+				newData.add(model.getElementAt(row));
+			}
+			
+			loadNewTableOIS (newData);
+			
+//			Messagebox.show("Dalam blok method findProductSearch, dengan value filter: " + filter);
+		}
+		
+		
+		
+		
+		/// usahakan sampai sini script nya, PR nya buat object baru untuk newData, biar datatable kembali terbentuk
+		// lalu buatkan fungsi reload datatable, dan generate ulang datatable dari awal
+		// ingat, pencarian data harusnya dari return get data nya.
+		
+	}
+	
+	
+	private List<Integer> findProductRowSearch(String filter)
+	{
+		ListModelTable data = (ListModelTable) window.getWListbox().getModel();
+		
+		List <Integer> listData= new ArrayList<Integer>();
+		KeyNamePair productName;
+		String getProductValue;
+		String productValue;
+ 		for (int i=0; i<data.getRowCount(); i++) {
+			productName = (KeyNamePair)data.getValueAt(i, 4);
+			
+			getProductValue = (String) data.getValueAt(i, 5);
+			productValue = (getProductValue == null) ? "" : (String) data.getValueAt(i, 5);
+			
+			if (productName.getName().toLowerCase().contains(filter.toLowerCase()) || productValue.toLowerCase().contains(filter.toLowerCase())) {
+
+				listData.add(i);
+			}
+			
+			
+		}
+		
+		return listData;
+		
+	}
+	
+	/**
+	 *  Load Order/Invoice/Shipment new data into Table
+	 *  @param data data
+	 */
+	protected void loadNewTableOIS (Vector<?> data)
+	{
+		
+		window.getWListbox().clear();
+		
+		//  Remove previous listeners
+		window.getWListbox().getModel().removeTableModelListener(window);
+		
+		//  Set Model
+		ListModelTable model = new ListModelTable(data);
+		
+		model.addTableModelListener(window);
+		window.getWListbox().setData(model, getOISColumnNames());
+		//
+		
+		configureMiniTable(window.getWListbox());
+	}   //  loadOrder
 	
 	/**
 	 * Checks the UPC value and checks if the UPC matches any of the products in the
@@ -457,7 +542,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	 *  @param C_BPartner_ID BPartner
 	 *  @param forInvoice for invoice
 	 */
-	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice, String filter)
+	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice,String filter)
 	{
 		if (log.isLoggable(Level.CONFIG)) log.config("C_BPartner_ID=" + C_BPartner_ID);
 		KeyNamePair pp = new KeyNamePair(0,"");
@@ -467,16 +552,16 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		orderField.addItem(pp);
 		
 		ArrayList<KeyNamePair> list = loadOrderData(C_BPartner_ID, forInvoice, sameWarehouseCb.isSelected());
-		
 		if(filter == null || filter.isBlank()) {
 			for(KeyNamePair knp : list)
 				orderField.addItem(knp);
 		}else {
-			for(KeyNamePair knp :list) {
+			for(KeyNamePair knp : list) {
 				if(knp.getName().toLowerCase().contains(filter.toLowerCase()))
-					orderField.addItem(knp);
+				orderField.addItem(knp);
 			}
 		}
+		
 		
 		int C_Order_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_Order_ID");
 		if (C_Order_ID > 0) {
@@ -487,18 +572,17 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 					loadOrder(knpo.getKey(), false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 			}
 		} else {
-//			orderField.getLisetSelectedIndex(0);
-			orderField.getListbox().setSelectedIndex(0);
+			orderField.clearSelection();
 		}
 		orderField.addActionListener(this);
 
 		initBPDetails(C_BPartner_ID);
 	}   //  initBPOrderDetails
 	
-	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice) {
-		initBPOrderDetails (C_BPartner_ID, forInvoice, null);
-	}
 	
+	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice) {
+		initBPOrderDetails (C_BPartner_ID, forInvoice,null);
+	}
 	public void initBPDetails(int C_BPartner_ID) 
 	{
 		initBPInvoiceDetails(C_BPartner_ID);
@@ -583,12 +667,16 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	 */
 	protected void loadTableOIS (Vector<?> data)
 	{
+		oldData = data;
+		
 		window.getWListbox().clear();
 		
 		//  Remove previous listeners
 		window.getWListbox().getModel().removeTableModelListener(window);
+		
 		//  Set Model
 		ListModelTable model = new ListModelTable(data);
+		
 		model.addTableModelListener(window);
 		window.getWListbox().setData(model, getOISColumnNames());
 		//

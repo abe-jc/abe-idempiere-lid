@@ -68,4 +68,6 @@ public class BandboxSearch extends Bandbox {
 		this.addEventListener(Events.ON_CHANGING, listener);
 		this.addEventListener(Events.ON_CHANGE, listener);
 	}
+	
+	
 }

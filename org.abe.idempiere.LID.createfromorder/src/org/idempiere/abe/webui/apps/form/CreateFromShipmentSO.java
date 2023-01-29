@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Level;
 
-import org.compiere.apps.IStatusBar;
-import org.compiere.grid.CreateFrom;
 import org.compiere.grid.CreateFromShipment;
 import org.compiere.minigrid.IMiniTable;
 import org.compiere.model.GridTab;
@@ -35,7 +33,6 @@ import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MProduct;
 import org.compiere.model.MRMALine;
-import org.compiere.model.MRequisitionLine;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
