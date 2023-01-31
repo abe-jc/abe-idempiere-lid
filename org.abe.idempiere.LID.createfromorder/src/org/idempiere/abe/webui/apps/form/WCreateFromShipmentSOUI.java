@@ -281,7 +281,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 				loadOrder(C_Order_ID, false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 				
 				if(C_Order_ID == 0) {
-					int bpId = bPartnerField.getValue() == null?0:((Integer)locatorField.getValue()).intValue();
+					int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
 					initBPOrderDetails(bpId, false);
 				}
 			}

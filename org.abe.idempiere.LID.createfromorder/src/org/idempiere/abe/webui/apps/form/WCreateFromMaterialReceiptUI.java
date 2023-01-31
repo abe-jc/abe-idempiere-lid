@@ -1,7 +1,19 @@
+/******************************************************************************
+ * Copyright (C) 2009 Low Heng Sin                                            *
+ * Copyright (C) 2009 Idalica Corporation                                     *
+ * This program is free software; you can redistribute it and/or modify it    *
+ * under the terms version 2 of the GNU General Public License as published   *
+ * by the Free Software Foundation. This program is distributed in the hope   *
+ * that it will be useful, but WITHOUT ANY WARRANTY; without even the implied *
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.           *
+ * See the GNU General Public License for more details.                       *
+ * You should have received a copy of the GNU General Public License along    *
+ * with this program; if not, write to the Free Software Foundation, Inc.,    *
+ * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.                     *
+ *****************************************************************************/
+
 package org.idempiere.abe.webui.apps.form;
 
-import static org.compiere.model.SystemIDs.WINDOW_CUSTOMERRETURN;
-import static org.compiere.model.SystemIDs.WINDOW_RETURNTOVENDOR;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -34,11 +46,15 @@ import org.adempiere.webui.editor.WStringEditor;
 import org.adempiere.webui.event.ValueChangeEvent;
 import org.adempiere.webui.event.ValueChangeListener;
 import org.adempiere.webui.util.ZKUpdateUtil;
+import org.compiere.grid.CreateFromShipment;
 import org.compiere.model.GridTab;
 import org.compiere.model.MLocatorLookup;
 import org.compiere.model.MLookup;
 import org.compiere.model.MLookupFactory;
 import org.compiere.model.MProduct;
+
+import static org.compiere.model.SystemIDs.*;
+
 import org.compiere.util.CLogger;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
@@ -49,15 +65,15 @@ import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zk.ui.event.InputEvent;
-//import org.zkoss.zul.Messagebox;
+import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Space;
 import org.zkoss.zul.Vlayout;
 
-public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt implements EventListener<Event>, ValueChangeListener  
+public class WCreateFromMaterialReceiptUI extends CreateFromShipment implements EventListener<Event>, ValueChangeListener
 {
 
 	private WCreateFromWindow window;
-
+	
 	private Vector<?> oldData;
 	
 	public WCreateFromMaterialReceiptUI(GridTab tab) 
@@ -85,8 +101,6 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 		AEnv.showWindow(window);
 	}
 	
-
-	
 	/** Window No               */
 	private int p_WindowNo;
 
@@ -111,15 +125,16 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 	protected WLocatorEditor locatorField = new WLocatorEditor();
 	protected Label upcLabel = new Label();
 	protected WStringEditor upcField = new WStringEditor();
-	
-	//Search text
-	protected Label searchLabel = new Label();
-//	protected WStringEditor searchField = new WStringEditor();
-	protected Textbox searchField = new Textbox();
 
 	private Grid parameterStdLayout;
 
 	private int noOfParameterColumn;
+	
+	/**
+	 * New Search
+	 */
+	protected Label searchLabel = new Label();
+	protected Textbox searchField  = new Textbox();
     
 	/**
 	 *  Dynamic Init
@@ -147,9 +162,10 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 		upcField = new WStringEditor ("UPC", false, false, true, 10, 30, null, null);
 		upcField.getComponent().addEventListener(Events.ON_CHANGE, this);
 		
-		searchField = new Textbox();
+		/**
+		 * new Search
+		 */
 		searchField.addEventListener(Events.ON_CHANGING, this);
-		
 
 		return true;
 	}   //  dynInit
@@ -166,9 +182,6 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
         sameWarehouseCb.setText(Msg.getMsg(Env.getCtx(), "FromSameWarehouseOnly", true));
         sameWarehouseCb.setTooltiptext(Msg.getMsg(Env.getCtx(), "FromSameWarehouseOnly", false));
         upcLabel.setText(Msg.getElement(Env.getCtx(), "UPC", false));
-        
-        //search 
-        searchLabel.setText("Search");
 
 		Vlayout vlayout = new Vlayout();
 		ZKUpdateUtil.setVflex(vlayout, "min");
@@ -213,10 +226,14 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 		row.appendChild(upcField.getComponent());
 		ZKUpdateUtil.setHflex(upcField.getComponent(), "1");
 		
-		//search 
-		row.appendCellChild(searchLabel.rightAlign());
+		/**
+		 * new Search
+		 */
+		searchLabel.setText("Search");
+		row.appendChild(searchLabel.rightAlign());
 		row.appendChild(searchField);
 		ZKUpdateUtil.setHflex(searchField, "1");
+		
 		
     	if (isRMAWindow) {
             // Add RMA document selection to panel
@@ -230,9 +247,10 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 				LayoutUtils.compactTo(parameterStdLayout, 2);		
 			ClientInfo.onClientInfo(window, this::onClientInfo);
 		}
+    	
 	}
 
-	private boolean m_actionActive = false;
+	private boolean 	m_actionActive = false;
 	
 	/**
 	 *  Action Listener
@@ -252,33 +270,37 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 			if (pp != null && pp.getKey() > 0)
 			{
 				int C_Order_ID = pp.getKey();
+				
 				orderField.setRawValue(pp.getName());
 				orderField.close();
+				
 				//  set Invoice and Shipment to Null
 				invoiceField.setSelectedIndex(-1);
                 rmaField.setSelectedIndex(-1);
-                searchField.setRawValue(null);
-
 				loadOrder(C_Order_ID, false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
+				
+				if(C_Order_ID == 0) {
+					int bpId = bPartnerField.getValue() == null ? 0 : ((Integer)bPartnerField.getValue()).intValue();
+					initBPOrderDetails(bpId, false);
+					
+				}
 			}
 		}
-		//for bandboxSearch order
+		//bandBoxSearchOrderField
 		else if(e.getTarget().equals(orderField)) {
 			if(Events.ON_CHANGING.equals(e.getName())) {
-
 				InputEvent inputEvent = (InputEvent) e;
 				String value = inputEvent.getValue();
 				
 				orderField.setAttribute("last.onchanging", value);
-				int bpId = bPartnerField.getValue() == null ? 0 :((Integer)bPartnerField.getValue()).intValue();
-				initBPOrderDetails(bpId,false, value);
-				
-				
+				int bpId = bPartnerField.getValue() == null ? 0 : ((Integer)bPartnerField.getValue()).intValue();
+				initBPOrderDetails(bpId, false,value);
 			}else {
 				orderField.removeAttribute("last.onchanging");
 			}
 			
 		}
+		
 		//  Invoice
 		else if (e.getTarget().equals(invoiceField))
 		{
@@ -289,7 +311,6 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 				//  set Order and Shipment to Null
 				orderField.clearSelection();
                 rmaField.setSelectedIndex(-1);
-                searchField.setRawValue(null);
 				loadInvoice(C_Invoice_ID, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 			}
 		}
@@ -303,8 +324,6 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
                 //  set Order and Shipment to Null
                 orderField.clearSelection();
                 invoiceField.setSelectedIndex(-1);
-                searchField.setRawValue(null);
-                
                 loadRMA(M_RMA_ID, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
             }
         }
@@ -318,39 +337,33 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 		{
 			checkProductUsingUPC();
 		}
-		
-		//searchfield
-		else if(e.getTarget().equals(searchField))
-		{
-//			ListModelTable oldData = (ListModelTable) window.getWListbox().getModel();
-			
-			
+		/**
+		 * new search
+		 */
+		else if(e.getTarget().equals(searchField)) {
 			if(Events.ON_CHANGING.equals(e.getName())) {
 				InputEvent inputEvent = (InputEvent) e;
 				String valueSearch = inputEvent.getValue();
 				
 				findProductSearch(valueSearch);
 				searchField.setAttribute("last.onchanging", valueSearch);
-//				Messagebox.show("Dalam blok if On_Changing dengan value: "+valueSearch);
+				
 			}else {
-//				Messagebox.show("Dalam blok else  On_Changing");
 				searchField.removeAttribute("last.onchanging");
+				Messagebox.show("else if event onchanging");
 			}
-			
-
 		}
 		
 		m_actionActive = false;
 	}
 	
+	/**
+	 * Method for findProduct by valueSearch
+	 */
+	
 	private void findProductSearch(String filter) {
-		
-		
-		
 		if(filter == null || filter.isBlank()) {
 			loadTableOIS(oldData);
-//			Messagebox.show("Dalam blok method findProductSearch, dengan value filter TIDAK ADA. dengan isi oldData: "+oldData);
-			
 		}else {
 			loadTableOIS(oldData);
 			
@@ -358,73 +371,37 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 			List<Integer> selected = findProductRowSearch(filter);
 			
 			Vector<Object> newData = new Vector<Object>();
-			for (int row: selected)
-			{
+			for(int row : selected) {
 				newData.add(model.getElementAt(row));
 			}
 			
-			loadNewTableOIS (newData);
+			loadTableOIS(newData, "new");
 			
-//			Messagebox.show("Dalam blok method findProductSearch, dengan value filter: " + filter);
 		}
-		
-		
-		
-		
-		/// usahakan sampai sini script nya, PR nya buat object baru untuk newData, biar datatable kembali terbentuk
-		// lalu buatkan fungsi reload datatable, dan generate ulang datatable dari awal
-		// ingat, pencarian data harusnya dari return get data nya.
-		
 	}
-	
 	
 	private List<Integer> findProductRowSearch(String filter)
 	{
 		ListModelTable data = (ListModelTable) window.getWListbox().getModel();
 		
-		List <Integer> listData= new ArrayList<Integer>();
+		List<Integer> listData = new ArrayList<>();
 		KeyNamePair productName;
-		String getProductValue;
 		String productValue;
- 		for (int i=0; i<data.getRowCount(); i++) {
+		for(int i=0;i<data.getRowCount();i++) {
 			productName = (KeyNamePair)data.getValueAt(i, 4);
 			
-			getProductValue = (String) data.getValueAt(i, 5);
-			productValue = (getProductValue == null) ? "" : (String) data.getValueAt(i, 5);
+			productValue = ((String)data.getValueAt(i, 5) == null) ? "" : (String)data.getValueAt(i, 5);
 			
-			if (productName.getName().toLowerCase().contains(filter.toLowerCase()) || productValue.toLowerCase().contains(filter.toLowerCase())) {
-
+			if(productName.getName().toLowerCase().contains(filter.toLowerCase()) || productValue.toLowerCase().contains(filter.toLowerCase())) {
 				listData.add(i);
 			}
-			
 			
 		}
 		
 		return listData;
-		
 	}
 	
-	/**
-	 *  Load Order/Invoice/Shipment new data into Table
-	 *  @param data data
-	 */
-	protected void loadNewTableOIS (Vector<?> data)
-	{
-		
-		window.getWListbox().clear();
-		
-		//  Remove previous listeners
-		window.getWListbox().getModel().removeTableModelListener(window);
-		
-		//  Set Model
-		ListModelTable model = new ListModelTable(data);
-		
-		model.addTableModelListener(window);
-		window.getWListbox().setData(model, getOISColumnNames());
-		//
-		
-		configureMiniTable(window.getWListbox());
-	}   //  loadOrder
+	
 	
 	/**
 	 * Checks the UPC value and checks if the UPC matches any of the products in the
@@ -542,7 +519,7 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 	 *  @param C_BPartner_ID BPartner
 	 *  @param forInvoice for invoice
 	 */
-	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice,String filter)
+	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice, String filter)
 	{
 		if (log.isLoggable(Level.CONFIG)) log.config("C_BPartner_ID=" + C_BPartner_ID);
 		KeyNamePair pp = new KeyNamePair(0,"");
@@ -552,15 +529,17 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 		orderField.addItem(pp);
 		
 		ArrayList<KeyNamePair> list = loadOrderData(C_BPartner_ID, forInvoice, sameWarehouseCb.isSelected());
+		
 		if(filter == null || filter.isBlank()) {
 			for(KeyNamePair knp : list)
 				orderField.addItem(knp);
 		}else {
 			for(KeyNamePair knp : list) {
 				if(knp.getName().toLowerCase().contains(filter.toLowerCase()))
-				orderField.addItem(knp);
+					orderField.addItem(knp);
 			}
 		}
+		
 		
 		
 		int C_Order_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_Order_ID");
@@ -579,10 +558,10 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 		initBPDetails(C_BPartner_ID);
 	}   //  initBPOrderDetails
 	
-	
 	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice) {
-		initBPOrderDetails (C_BPartner_ID, forInvoice,null);
+		initBPOrderDetails (C_BPartner_ID, forInvoice, null);
 	}
+	
 	public void initBPDetails(int C_BPartner_ID) 
 	{
 		initBPInvoiceDetails(C_BPartner_ID);
@@ -665,23 +644,30 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 	 *  Load Order/Invoice/Shipment data into Table
 	 *  @param data data
 	 */
-	protected void loadTableOIS (Vector<?> data)
+	protected void loadTableOIS (Vector<?> data,String con)
 	{
-		oldData = data;
+		if(con == null) {
+			oldData = data;
+		}
+
 		
 		window.getWListbox().clear();
 		
 		//  Remove previous listeners
 		window.getWListbox().getModel().removeTableModelListener(window);
-		
 		//  Set Model
 		ListModelTable model = new ListModelTable(data);
-		
 		model.addTableModelListener(window);
 		window.getWListbox().setData(model, getOISColumnNames());
 		//
 		
 		configureMiniTable(window.getWListbox());
+	}   //  loadOrder
+	
+	protected void loadTableOIS (Vector<?> data)
+	{
+		
+		loadTableOIS (data,null);
 	}   //  loadOrder
 	
 	public void showWindow()
@@ -754,6 +740,4 @@ public class WCreateFromMaterialReceiptUI extends CreateFromMaterialReceipt impl
 			window.invalidate();			
 		}
 	}
-
-
 }

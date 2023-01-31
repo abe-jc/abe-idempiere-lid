@@ -256,7 +256,7 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 			
 			if(C_Order_ID == 0) {
 				int C_BPartner_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_BPartner_ID");
-				initBPOrderDetails (C_BPartner_ID, false);
+				initBPOrderDetails (C_BPartner_ID, true);
 			}
 		}
 		//bandbox search order
@@ -267,7 +267,7 @@ public class WCreateFromInvoiceCustomerUI extends CreateFromInvoice implements E
 				
 				orderField.setAttribute("last.onchanging", value);
 				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
-				initBPOrderDetails(bpId,false,value);
+				initBPOrderDetails(bpId,true,value);
 				
 			}else if(Events.ON_CHANGE.equals(e.getName())) {
 				orderField.removeAttribute("last.onchanging");
