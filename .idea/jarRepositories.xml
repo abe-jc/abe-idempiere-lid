@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteRepositoriesConfiguration">
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://repo.maven.apache.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jr-ce-releases" />
+      <option name="name" value="jr-ce-releases" />
+      <option name="url" value="https://jaspersoft.jfrog.io/jaspersoft/jr-ce-releases" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="atlassian-3rdparty" />
+      <option name="name" value="atlassian-3rdparty" />
+      <option name="url" value="https://maven.atlassian.com/3rdparty" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Central" />
+      <option name="name" value="Central" />
+      <option name="url" value="https://repo1.maven.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Maven Central repository" />
+      <option name="url" value="https://repo1.maven.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="idempiere-zkoss" />
+      <option name="name" value="idempiere-zkoss" />
+      <option name="url" value="https://idempiere.github.io/binary.file/maven.zk/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Redhat-GA" />
+      <option name="name" value="Redhat-GA" />
+      <option name="url" value="https://maven.repository.redhat.com/ga" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="zkoss" />
+      <option name="name" value="zkoss" />
+      <option name="url" value="https://mavensync.zkoss.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="OpenNMS" />
+      <option name="name" value="OpenNMS" />
+      <option name="url" value="https://repo.opennms.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jenkins" />
+      <option name="name" value="jenkins" />
+      <option name="url" value="https://repo.jenkins-ci.org/releases" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jp-third-party-ce" />
+      <option name="name" value="jp-third-party-ce" />
+      <option name="url" value="https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jboss.community" />
+      <option name="name" value="JBoss Community repository" />
+      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="Clojars" />
+      <option name="name" value="Clojars" />
+      <option name="url" value="https://clojars.org/repo" />
+    </remote-repository>
+  </component>
+</project>

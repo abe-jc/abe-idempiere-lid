@@ -18,7 +18,7 @@
 		<unit id="org.idempiere.felix.webconsole.feature.feature.group"/>
 		<unit id="org.idempiere.hazelcast.service.feature.feature.group"/>
 		<unit id="org.idempiere.zk.feature.feature.group"/>
-		<repository location="file:../../idempiere/org.idempiere.p2/target/repository"/>
+		<repository location="file:/home/ict/coding/java/idempiere/org.idempiere.p2/target/repository"/>
 	</location>
 	<location includeSource="true" missingManifest="generate" type="Maven">
 		<groupId>io.github.classgraph</groupId>
