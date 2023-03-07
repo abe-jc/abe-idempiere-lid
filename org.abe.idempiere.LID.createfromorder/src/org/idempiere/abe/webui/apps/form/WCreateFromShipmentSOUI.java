@@ -62,9 +62,11 @@ import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.KeyNamePair;
 import org.compiere.util.Msg;
+import org.idempiere.abe.webui.apps.component.BandboxSearch;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
+import org.zkoss.zk.ui.event.InputEvent;
 import org.zkoss.zul.Borderlayout;
 import org.zkoss.zul.Center;
 import org.zkoss.zul.Space;
@@ -115,8 +117,9 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	protected WEditor bPartnerField;
 	
 	protected Label orderLabel = new Label();
-	protected Listbox orderField = ListboxFactory.newDropdownListbox();
-
+/**	protected Listbox orderField = ListboxFactory.newDropdownListbox(); */
+	protected BandboxSearch orderField = new BandboxSearch();
+	
     /** Label for the rma selection */
     protected Label rmaLabel = new Label();
     /** Combo box for selecting RMA document */
@@ -271,18 +274,42 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		m_actionActive = true;
 
 		//  Order
-		if (e.getTarget().equals(orderField))
+		if (e.getTarget().equals(orderField.getListbox()))
 		{
 			KeyNamePair pp = orderField.getSelectedItem().toKeyNamePair();
-			if (pp != null && pp.getKey() > 0)
+//			if (pp != null && pp.getKey() > 0)
+			if (pp != null)
 			{
 				int C_Order_ID = pp.getKey();
 				//  set Invoice and Shipment to Null
+				orderField.setRawValue(pp.getName());
+				orderField.close();
+				
 				invoiceField.setSelectedIndex(-1);
                 rmaField.setSelectedIndex(-1);
 				loadOrder(C_Order_ID, false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
+				
+				if (C_Order_ID == 0) {
+                	int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
+                	initBPOrderDetails(bpId, false);
+                }
 			}
 		}
+		//bandboxSearch
+		else if(e.getTarget().equals(orderField)) {
+			if(Events.ON_CHANGING.equals(e.getName())) {
+				InputEvent inputEvent = (InputEvent) e;
+				String value = inputEvent.getValue();
+				
+				orderField.setAttribute("last.onchanging", value);
+				int bpId = bPartnerField.getValue() == null?0:((Integer)bPartnerField.getValue()).intValue();
+				initBPOrderDetails(bpId,false,value);
+				
+			}else if(Events.ON_CHANGE.equals(e.getName())) {
+				orderField.removeAttribute("last.onchanging");
+			}
+		}
+		
 		//  Invoice
 		else if (e.getTarget().equals(invoiceField))
 		{
@@ -291,7 +318,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 			{
 				int C_Invoice_ID = pp.getKey();
 				//  set Order and Shipment to Null
-				orderField.setSelectedIndex(-1);
+				orderField.clearSelection();
                 rmaField.setSelectedIndex(-1);
 				loadInvoice(C_Invoice_ID, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 			}
@@ -304,7 +331,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
             {
                 int M_RMA_ID = pp.getKey();
                 //  set Order and Shipment to Null
-                orderField.setSelectedIndex(-1);
+                orderField.clearSelection();
                 invoiceField.setSelectedIndex(-1);
                 loadRMA(M_RMA_ID, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
             }
@@ -439,7 +466,7 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 	 *  @param C_BPartner_ID BPartner
 	 *  @param forInvoice for invoice
 	 */
-	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice)
+	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice, String filter)
 	{
 		if (log.isLoggable(Level.CONFIG)) log.config("C_BPartner_ID=" + C_BPartner_ID);
 		KeyNamePair pp = new KeyNamePair(0,"");
@@ -449,8 +476,16 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 		orderField.addItem(pp);
 		
 		ArrayList<KeyNamePair> list = loadOrderData(C_BPartner_ID, forInvoice, sameWarehouseCb.isSelected());
-		for(KeyNamePair knp : list)
-			orderField.addItem(knp);
+		
+		if(filter == null || filter.isBlank()) {
+			for(KeyNamePair knp : list)
+				orderField.addItem(knp);
+		}else {
+			for(KeyNamePair knp :list) {
+				if(knp.getName().toLowerCase().contains(filter.toLowerCase()))
+					orderField.addItem(knp);
+			}
+		}
 		
 		int C_Order_ID = Env.getContextAsInt(Env.getCtx(), p_WindowNo, "C_Order_ID");
 		if (C_Order_ID > 0) {
@@ -461,12 +496,16 @@ public class WCreateFromShipmentSOUI extends CreateFromShipmentSO implements Eve
 					loadOrder(knpo.getKey(), false, locatorField.getValue()!=null?((Integer)locatorField.getValue()).intValue():0);
 			}
 		} else {
-			orderField.setSelectedIndex(0);
+			orderField.getListbox().setSelectedIndex(0);
 		}
 		orderField.addActionListener(this);
 
 		initBPDetails(C_BPartner_ID);
 	}   //  initBPOrderDetails
+	
+	protected void initBPOrderDetails (int C_BPartner_ID, boolean forInvoice) {
+		initBPOrderDetails (C_BPartner_ID, forInvoice, null);
+	}
 	
 	public void initBPDetails(int C_BPartner_ID) 
 	{
